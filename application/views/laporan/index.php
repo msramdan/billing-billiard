@@ -108,12 +108,15 @@
 																?>
 															<b>Total : <?php echo rupiah($total_makanan)  ?></b>
 														</td>
-														<td><?php echo rupiah($jml = $jml + $data->billiard_play_price + $total_makanan) ?></td>
+														<td><?php echo rupiah($data->billiard_play_price + $total_makanan) ?></td>
 														<td>
 															<a href="<?= base_url() ?>billing/print/<?= $data->bill ?>" class="btn btn-sm btn-danger m-r-5"><i class="fa fa-print" aria-hidden="true"></i> Invoice</a>
 														</td>
 													</tr>
-												<?php } ?>
+												<?php 
+												$jml += $data->billiard_play_price + $total_makanan;
+												} 
+												?>
 											</tbody>
 
 

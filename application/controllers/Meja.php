@@ -197,11 +197,40 @@ class Meja extends CI_Controller
         $this->load->model('Transaksi_model');
 
         $databilling = $this->Transaksi_model->get_by_billing_id($getdatameja->billing_id);
-        
-        $updatebilling = array(
-            'payment_status' => 1,
-        );
 
+        $updatebilling = '';
+        if(strlen($databilling->paket) <= 5) {
+            $this->load->model('Paket_model');
+            $getmenitpaketchoice = $this->Paket_model->get_by_id($databilling->paket)->menit;
+
+			$paketinseconds = $getmenitpaketchoice * 60;
+			$additionalitemdaridatabilling = json_decode($databilling->additional_item, TRUE);
+
+			$mulainya = new DateTime($databilling->start);
+			$e = new DateTime();
+			$diffseconds = $e->getTimestamp() - $mulainya->getTimestamp();
+			
+			// end of date mulainya + diffseconds
+			$akhirnya = date('Y-m-d H:i:s', strtotime($mulainya->format('Y-m-d H:i:s') . ' + ' . $diffseconds . ' seconds'));
+			$getdatapaket = $this->Paket_model->get_by_id($databilling->paket);
+
+			$hours = floor($diffseconds / 3600);
+			$minutes = floor(($diffseconds / 60) % 60);
+			$seconds = $diffseconds % 60;
+
+			$durasinya = $hours.':'.$minutes.':'.$seconds;
+
+			$totalbayarbilliardnya = $getdatapaket->harga / $paketinseconds * $diffseconds;
+            $updatebilling = array(
+                'end' => $akhirnya,
+                'billiard_play_price' => $totalbayarbilliardnya,
+                'payment_status' => 1,
+            );
+        } else {
+            $updatebilling = array(
+                'payment_status' => 1,
+            );
+        }
         
         $updatemeja = array(
             'in_use' => 0,

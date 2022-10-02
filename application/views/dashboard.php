@@ -596,7 +596,6 @@
 					// console.log(val)
 					// set durasi and sisa
 					if(val.jenis_paket == 'loss') {
-						alert('LOSS PAKET!')
 						var mejaDiv = $('#meja-' + val.meja_id);
 						var totalSecondsOfThisMeja = val.totalseconds;
 						arraySecondsDuration[index] = totalSecondsOfThisMeja;
@@ -729,8 +728,7 @@
 		$(document).on('click', '.btn-tambah-billing', function(e) {
 			var mejadiv = $(this).parents('.meja_div');
 			var meja_id = mejadiv.find('.card-title').text();
-			var billing_id = mejadiv.find('.bill-id').text();
-			alert('This button belongs to ' + meja_id);
+			var billing_id = mejadiv.find('.bill-id').text()
 
 			// show modal tambah billing
 			$('#modal-tambah-billing').modal('show');

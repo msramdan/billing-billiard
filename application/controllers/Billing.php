@@ -39,15 +39,19 @@ class Billing extends CI_Controller
         $orientation = "portrait";
 
 		if(is_numeric($billing_data->paket)){
+			$this->load->model('Paket_model');
+			$getmenitpaketchoice = $this->Paket_model->get_by_id($billing_data->paket)->menit;
+
+			$paketinseconds = $getmenitpaketchoice * 60;
 			$additionalitemdaridatabilling = json_decode($billing_data->additional_item, TRUE);
 
 			$mulainya = new DateTime($billing_data->start);
-			$e = new DateTime();
+			$e = new DateTime($billing_data->end);
 			$diffseconds = $e->getTimestamp() - $mulainya->getTimestamp();
 			
 			// end of date mulainya + diffseconds
 			$akhirnya = date('Y-m-d H:i:s', strtotime($mulainya->format('Y-m-d H:i:s') . ' + ' . $diffseconds . ' seconds'));
-			$this->load->model('Paket_model');
+
 			$getdatapaket = $this->Paket_model->get_by_id($billing_data->paket);
 
 			$hours = floor($diffseconds / 3600);
@@ -56,7 +60,7 @@ class Billing extends CI_Controller
 
 			$durasinya = $hours.':'.$minutes.':'.$seconds;
 
-			$bayarnyabilling = $getdatapaket->harga / $getdatapaket->menit * $minutes;
+			$bayarnyabilling = $getdatapaket->harga / $paketinseconds * $diffseconds;
 
 			$arrdata = array(
 				'billing_id' => $id_billing,
