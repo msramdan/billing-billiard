@@ -18,6 +18,10 @@ function is_login()
 	}
 }
 
+function cekJson($string){
+	return is_string($string) && is_array(json_decode($string, true)) ? true : false;
+ }
+
 function check_admin()
 {
 	$ci = &get_instance();
@@ -42,4 +46,12 @@ function generateBillingId() {
 	$billing_id = $last_id . date('Ymd');
 	return $billing_id;
 }
+
+ function name_paket($paket_id)
+	{
+		$ci = &get_instance();
+		$ci->load->model('Paket_model');
+		$data = $ci->Paket_model->get_by_id($paket_id);
+		return $data->nama_paket;
+	}
 

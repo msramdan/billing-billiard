@@ -67,8 +67,12 @@
 													<th>Action</th>
 												</tr>
 											</thead>
-											<tbody><?php $no = 1;
-											$jml = 0;
+											<tbody><?php
+
+													use function PHPUnit\Framework\isJson;
+
+													$no = 1;
+													$jml = 0;
 													foreach ($data_laporan as $data) {
 													?>
 													<tr>
@@ -77,14 +81,18 @@
 														<td><?php echo $data->nama_meja ?></td>
 														<td><?php echo $data->start ?></td>
 														<td><?php echo $data->end ?></td>
-														<td> <?php $data_bill = json_decode($data->paket);
-																foreach ($data_bill as $value) {
-																	echo "Nama Paket : " . $value->nama_paket . '<br>';
-																	echo "Menit : " . $value->menit . '<br>';
-																	echo "Harga : " . rupiah($value->harga)  . '<br>';
+														<td> <?php if (cekJson($data->paket)) {
+																	$data_bill = json_decode($data->paket);
+																	foreach ($data_bill as $value) {
+																		echo "Nama Paket : " . $value->nama_paket . '<br>';
+																		echo "Menit : " . $value->menit . '<br>';
+																		echo "Harga : " . rupiah($value->harga)  . '<br>';
+																		echo "____________________________ <br>";
+																	}
+																} else {
+																	echo name_paket($data->paket) . '<br>';
 																	echo "____________________________ <br>";
-																}
-																?>
+																} ?>
 															<b>Total : <?php echo rupiah($data->billiard_play_price)  ?></b>
 														</td>
 														<td> <?php $additional_item = json_decode($data->additional_item);
@@ -114,7 +122,7 @@
 											</tbody>
 										</table>
 										<div class="alert alert-success" role="alert">
-											<h5>Total Pemasukan : <?= rupiah($jml) ?></h5> 
+											<h5>Total Pemasukan : <?= rupiah($jml) ?></h5>
 										</div>
 									</div>
 								</div>
