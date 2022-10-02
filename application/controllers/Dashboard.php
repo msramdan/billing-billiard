@@ -51,7 +51,7 @@ class Dashboard extends CI_Controller {
 				'start' => $start_main,
 				'end' => 'N/A',
 				'meja_id' => $id_meja,
-				'billiard_play_price' => $getpaketdetail->harga,
+				'billiard_play_price' => 0,
 				'additional_item' => json_encode(array()),
 				'payment_status' => 0
 			);
@@ -244,6 +244,10 @@ class Dashboard extends CI_Controller {
 
 					$additionalitemdaridatabilling = json_decode($billing_data->additional_item, TRUE);
 
+					$getmenitpaketchoice = $this->Paket_model->get_by_id($billing_data->paket)->menit;
+
+					$paketinseconds = $getmenitpaketchoice * 60;
+
 					$mulainya = new DateTime($billing_data->start);
 					$e = new DateTime();
 					$diffseconds = $e->getTimestamp() - $mulainya->getTimestamp();
@@ -260,7 +264,7 @@ class Dashboard extends CI_Controller {
 					$durasinya = $hours.':'.$minutes.':'.$seconds;
 
 
-					$bayarnyabilling = $getdatapaket->harga / $getdatapaket->menit * $minutes;
+					$bayarnyabilling = $getdatapaket->harga / $paketinseconds * $diffseconds;
 
 					$arrdata = array(
 						'billing_id' => $id_billing,

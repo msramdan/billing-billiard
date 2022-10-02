@@ -13,6 +13,7 @@ class Laporan extends CI_Controller {
 
 	public function index()
 	{
+		
 		if(isset($_GET['start_date'])){
 			$start_date = $_GET['start_date']. " " .'00:00:01';
 			$start_date2 = $_GET['start_date'];
@@ -33,9 +34,26 @@ class Laporan extends CI_Controller {
 			'start_date' => $start_date2,
 			'end_date' => $end_date2,
 			'data_laporan' => $result,
+			'disclass' => $this
 			
 		);
 		$this->template->load('template', 'laporan/index', $data);
 	}
 
+	public function detailpaket($id_paket) {
+		$this->load->model('Paket_model');
+		$data = $this->Paket_model->get_by_id($id_paket);
+		return $data;
+	}
+
+	public function jumlah_menit($start, $end) {
+		$mulainya = new DateTime($start);
+		$e = new DateTime($end);
+		$diffseconds = $e->getTimestamp() - $mulainya->getTimestamp();
+		$hours = floor($diffseconds / 3600);
+		$minutes = floor(($diffseconds / 60) % 60);
+		$seconds = $diffseconds % 60;
+		$jumlah_menit = $hours * 60 + $minutes;
+		return $jumlah_menit;
+	}
 }

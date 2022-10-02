@@ -71,20 +71,31 @@
 											$jml = 0;
 													foreach ($data_laporan as $data) {
 													?>
-													<tr>
-														<td><?= $no++ ?></td>
-														<td><?php echo $data->bill ?></td>
-														<td><?php echo $data->nama_meja ?></td>
-														<td><?php echo $data->start ?></td>
-														<td><?php echo $data->end ?></td>
-														<td> <?php $data_bill = json_decode($data->paket);
+														<tr>
+															<td><?= $no++ ?></td>
+															<td><?php echo $data->bill ?></td>
+															<td><?php echo $data->nama_meja ?></td>
+															<td><?php echo $data->start ?></td>
+															<td><?php echo $data->end ?></td>
+															<td> <?php 
+															
+															if(strlen($data->paket) >= 5) {
+																$data_bill= json_decode($data->paket);
 																foreach ($data_bill as $value) {
 																	echo "Nama Paket : " . $value->nama_paket . '<br>';
 																	echo "Menit : " . $value->menit . '<br>';
 																	echo "Harga : " . rupiah($value->harga)  . '<br>';
 																	echo "____________________________ <br>";
 																}
-																?>
+															} else {
+																echo "Nama Paket : " . $disclass->detailpaket($data->paket)->nama_paket . '<br>';
+																echo "Menit : " . $disclass->jumlah_menit($data->start,$data->end) . '<br>';
+																echo "Harga : " . rupiah($data->billiard_play_price)  . '<br>';
+																echo "____________________________ <br>";
+															}
+															?>
+
+														
 															<b>Total : <?php echo rupiah($data->billiard_play_price)  ?></b>
 														</td>
 														<td> <?php $additional_item = json_decode($data->additional_item);
@@ -100,12 +111,15 @@
 																?>
 															<b>Total : <?php echo rupiah($total_makanan)  ?></b>
 														</td>
-														<td><?php echo rupiah($jml = $jml + $data->billiard_play_price + $total_makanan) ?></td>
+														<td><?php echo rupiah($data->billiard_play_price + $total_makanan) ?></td>
 														<td>
 															<a href="<?= base_url() ?>billing/print/<?= $data->bill ?>" class="btn btn-sm btn-danger m-r-5"><i class="fa fa-print" aria-hidden="true"></i> Invoice</a>
 														</td>
 													</tr>
-												<?php } ?>
+												<?php 
+												$jml += $data->billiard_play_price + $total_makanan;
+												} 
+												?>
 											</tbody>
 
 
