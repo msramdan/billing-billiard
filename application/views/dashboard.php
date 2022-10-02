@@ -44,6 +44,7 @@
 
 	.pending {
 		box-shadow: rgb(177 26 26 / 20%) 0px 7px 29px 0px;
+		background-color: gray;
 	}
 
 	.not-available {
@@ -212,7 +213,7 @@
 											<i class="fa fa-spinner fa-spin"></i>
 										</div>
 									</div>
-									<div class="card">
+									<div class="card" >
 										<form class="form-meja" data-idmeja="<?= $i->meja_id ?>">
 											<div class="card-header" style="position: relative;">
 												<h3 class="card-title" style="font-weight: bold;"><?= $i->nama_meja ?></h3>
@@ -310,7 +311,7 @@
 						<td><input type="number" class="form-control qty" min="1" value="1"></td>
 					</tr>
 				</table>
-				<button class="btn btn-primary btn-add-item" type="button">Add</button>
+				<button class="btn btn-primary btn-add-item" type="button">Add</button> <br> <br>
 				<form id="order-menu-form">
 					<table class="table table-bordered table-striped table-hover tabel-list-order">
 						<thead>
@@ -529,7 +530,7 @@
 				<button class="btn btn-checkout" type="button">Checkout</button>
 			`)
 		}
-
+		// Ramdan
 		if(end) {
 			var totalseconds = totalSeconds(new Date(), end)
 	
