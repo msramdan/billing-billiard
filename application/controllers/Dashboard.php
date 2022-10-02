@@ -19,14 +19,20 @@ class Dashboard extends CI_Controller {
 		$meja_list = $this->Meja_model->get_all();
 		$paket_list = $this->Paket_model->get_all();
 		$produk_list = $this->Produk_model->get_all();
+
+
+
 		$data = array(
 			'meja_list' => $meja_list,
 			'paket_list' => $paket_list,
-			'makananminuman_list' => $produk_list
+			'makananminuman_list' => $produk_list,
+			'disclass' => $this
 		);
 
 		$this->template->load('template', 'dashboard', $data);
 	}
+
+ 
 
 	public function start_billing() {
 		$id_meja = $this->input->post('id_meja');
@@ -34,12 +40,49 @@ class Dashboard extends CI_Controller {
 		$billing_id = $this->input->post('billing_id');
 		$action = $this->input->post('action');
 
-		if($action == 'nambah') {
-			$getstartmain = $this->Meja_model->get_by_id($id_meja);
-		}
+		$getpaketdetail = $this->Paket_model->get_by_id($paket_choice);
 
-		if($action == 'baru') {
-			$getmenitbypaketchoice = $this->Paket_model->get_by_id($paket_choice)->menit;
+		$this->load->helper('fungsi');
+		if($getpaketdetail->paket_id == 0 || $getpaketdetail->paket_id == 1) {
+			$start_main = date('Y-m-d H:i:s');
+			$arr_data_transaksi = array(
+				'billing_id' => generateBillingId(),
+				'paket' => $getpaketdetail->paket_id,
+				'start' => $start_main,
+				'end' => 'N/A',
+				'meja_id' => $id_meja,
+				'billiard_play_price' => $getpaketdetail->harga,
+				'additional_item' => json_encode(array()),
+				'grand_total' => $getpaketdetail->harga,
+				'payment_status' => 0
+			);
+
+			$secondscappedconvertedfromminutes = $getpaketdetail->menit * 60;
+
+			$this->load->model('Transaksi_model');
+			$this->Transaksi_model->insert($arr_data_transaksi);
+
+			$update_datameja = array(
+				'in_use' => 1,
+				'billing_id' => $arr_data_transaksi['billing_id'],
+			);
+			$this->load->model('Meja_model');
+			$this->Meja_model->update($id_meja, $update_datameja);
+
+			$arr = array(
+				'bill_id' => $arr_data_transaksi['billing_id'],
+				'start_time' => $start_main,
+				// 'left_time' => $time_left,
+				'seconds' => 0,
+				'seconds_capped' => $secondscappedconvertedfromminutes,
+				'end_time' => '-',
+				'status' => 'success',
+				'jenis_paket' => 'loss'
+			);
+
+			echo json_encode($arr);
+		} else {
+			$getmenitbypaketchoice = $getpaketdetail->menit;
 
 			// convert getmenitbypaketchoice to seconds
 			$seconds_paket = $getmenitbypaketchoice * 60;
@@ -70,8 +113,6 @@ class Dashboard extends CI_Controller {
 
 			$time_left = floor($total_hours_left) . ' Jam ' . floor($total_minutes_left) . ' Menit ' . floor($total_seconds_left) . ' Detik';
 
-			$getpaketdetail = $this->Paket_model->get_by_id($paket_choice);
-
 			$arrdatapaket = array(
 				[
 					'id_paket' => $getpaketdetail->paket_id,
@@ -80,8 +121,6 @@ class Dashboard extends CI_Controller {
 					'harga' => $getpaketdetail->harga,
 				]
 			);
-
-			$this->load->helper('fungsi');
 			$arr_data_transaksi = array(
 				'billing_id' => generateBillingId(),
 				'paket' => json_encode($arrdatapaket),
@@ -111,6 +150,7 @@ class Dashboard extends CI_Controller {
 				'seconds' => $seconds_paket,
 				'end_time' => $end_main,
 				'status' => 'success',
+				'jenis_paket' => 'custom'
 			);
 
 			echo json_encode($arr);
@@ -200,30 +240,109 @@ class Dashboard extends CI_Controller {
 		$this->load->model('Transaksi_model');
 		$billing_data = $this->Transaksi_model->get_by_billing_id($id_billing);
 
-		$paketyangdimaenindaridatabilling = json_decode($billing_data->paket, TRUE);
-		$additionalitemdaridatabilling = json_decode($billing_data->additional_item, TRUE);
-		$menittotal = 0;
+		if($billing_data) {
 
-		foreach ($paketyangdimaenindaridatabilling as $q => $v) {
-			$menittotal += intval($v['menit']);
+			if(is_numeric($billing_data->paket)) {
+				if($billing_data->paket == 0 || $billing_data->paket == 1) {
+
+					$additionalitemdaridatabilling = json_decode($billing_data->additional_item, TRUE);
+
+					$mulainya = new DateTime($billing_data->start);
+					$e = new DateTime();
+					$diffseconds = $e->getTimestamp() - $mulainya->getTimestamp();
+					
+					// end of date mulainya + diffseconds
+					$akhirnya = date('Y-m-d H:i:s', strtotime($mulainya->format('Y-m-d H:i:s') . ' + ' . $diffseconds . ' seconds'));
+					$this->load->model('Paket_model');
+					$getdatapaket = $this->Paket_model->get_by_id($billing_data->paket);
+
+					$hours = floor($diffseconds / 3600);
+					$minutes = floor(($diffseconds / 60) % 60);
+					$seconds = $diffseconds % 60;
+
+					$durasinya = $hours.':'.$minutes.':'.$seconds;
+
+					// multiple count based on minutes
+					$x = 0;
+					$begin = $mulainya;
+
+					// Set end date
+					$end = new DateTime($akhirnya);
+
+					$menitcappaketloss = $getdatapaket->menit;
+
+					// Set interval
+					$interval = new DateInterval('PT'.$menitcappaketloss.'M');
+
+					// Create daterange
+					$daterange = new DatePeriod($begin, $interval ,$end);
+
+					// Loop through range
+					foreach($daterange as $date){
+						// Output date and time
+						$x++;
+					}
+
+					$arrdata = array(
+						'billing_id' => $id_billing,
+						'nama_paket_lossnya' => $getdatapaket->nama_paket,
+						'start_time' => $mulainya,
+						'total_durasi' => $durasinya.' ('.$minutes.' Menit)',
+						'paketnya' => $getdatapaket,
+						'total_harga_billiard' => ($getdatapaket->harga * $x),
+						'itemlist' => $additionalitemdaridatabilling,
+					);
+
+					$arrresp = array(
+						'status' => 'success',
+						'data' => $this->load->view('transaksi/meja_billing_detail_paketloss', $arrdata, TRUE),
+						'message' => 'ok'
+					);
+	
+					echo json_encode($arrresp);
+				}
+			} else {
+				$paketyangdimaenindaridatabilling = json_decode($billing_data->paket, TRUE);
+				$additionalitemdaridatabilling = json_decode($billing_data->additional_item, TRUE);
+				$menittotal = 0;
+		
+				foreach ($paketyangdimaenindaridatabilling as $q => $v) {
+					$menittotal += intval($v['menit']);
+				}
+		
+				// convert menittotal to hours and minutes and seconds
+				$hours = floor($menittotal / 60);
+				$minutes = ($menittotal % 60);
+				$seconds = 0;
+		
+				$durasinya = $hours.':'.$minutes.':'.$seconds;
+		
+				$arrdata = array(
+					'billing_id' => $id_billing,
+					'start_time' => $billing_data->start,
+					'total_durasi' => $durasinya.' ('.$menittotal.' Menit)',
+					'paketlist' => $paketyangdimaenindaridatabilling,
+					'itemlist' => $additionalitemdaridatabilling,
+				);
+				
+				$arrresp = array(
+					'status' => 'success',
+					'data' => $this->load->view('transaksi/meja_billing_detail_paketcustom', $arrdata, TRUE),
+					'message' => 'ok'
+				);
+
+				echo json_encode($arrresp);
+			}
+		} else {
+			$arrresp = array(
+				'status' => 'not found',
+				'data' => '',
+				'message' => 'Silahkan Memulai Billing Terlebih dahulu'
+			);
+
+			echo json_encode($arrresp);
 		}
 
-		// convert menittotal to hours and minutes and seconds
-		$hours = floor($menittotal / 60);
-		$minutes = ($menittotal % 60);
-		$seconds = 0;
-
-		$durasinya = $hours.':'.$minutes.':'.$seconds;
-
-		$arrdata = array(
-			'billing_id' => $id_billing,
-			'start_time' => $billing_data->start,
-			'total_durasi' => $durasinya.' ('.$menittotal.' Menit)',
-			'paketlist' => $paketyangdimaenindaridatabilling,
-			'itemlist' => $additionalitemdaridatabilling,
-		);
-
-		$this->load->view('transaksi/meja_billing_detail', $arrdata, FALSE);
 	}
 
 	public function get_order_itemofbilling() {

@@ -133,30 +133,56 @@ class Meja extends CI_Controller
                 $this->load->model('Transaksi_model');
     
                 $getdatabilling = $this->Transaksi_model->get_by_billing_id($value->billing_id);
-    
-                $getpaketlistinbilling = json_decode($getdatabilling->paket, TRUE);
-                
-                $paket = $this->Paket_model->get_by_id(end($getpaketlistinbilling)['id_paket']);
 
-                $menit_list = [];
-                foreach ($getpaketlistinbilling as $q => $v) {
-                    $menit_list[] = intval($v['menit']);
+                // count string getdatabilling->paket
+
+                // is getdatabilling->paket integer?
+                if(strlen($getdatabilling->paket) <= 5) {
+                    $paket = $this->Paket_model->get_by_id($getdatabilling->paket);
+
+
+                    if($paket->paket_id == 0 || $paket->paket_id == 1) {
+
+                        $datenow = date('Y-m-d H:i:s');
+                        $startbilling = date('Y-m-d H:i:s', strtotime($getdatabilling->start));
+
+                        $totalsecondssincestartbilling = strtotime($datenow) - strtotime($startbilling);
+
+
+                        $arrtime[$key] = array(
+                            'bill_id' => $getdatabilling->billing_id,
+                            'start_time' => $getdatabilling->start,
+                            'end_time' => '-',
+                            'totalseconds' => $totalsecondssincestartbilling,
+                            'meja_id' => $value->meja_id,
+                            'paket_id' => $paket->paket_id,
+                            'jenis_paket' => 'loss'
+                        );
+                    }
+                } else {
+                    $paket = $this->Paket_model->get_by_id($getdatabilling->paket);
+                    $getpaketlistinbilling = json_decode($getdatabilling->paket, TRUE);
+                    $menit_list = [];
+                    foreach ($getpaketlistinbilling as $q => $v) {
+                        $menit_list[] = intval($v['menit']);
+                    }
+
+                    $minutestoadd = $paket->menit. ' Minutes';
+        
+                    $start_main = $getdatabilling->start;
+        
+                    $end_main = date('Y-m-d H:i:s', strtotime($start_main . ' + '.$minutestoadd));
+        
+                    $arrtime[$key] = array(
+                        'bill_id' => $getdatabilling->billing_id,
+                        'start_time' => $getdatabilling->start,
+                        'end_time' => date('Y-m-d H:i:s', strtotime($getdatabilling->end)),
+                        'menit_list' => $menit_list,
+                        'meja_id' => $value->meja_id,
+                        'paket_id' => end($getpaketlistinbilling)['id_paket'],
+                        'jenis_paket' => 'custom'
+                    );
                 }
-
-                $minutestoadd = $paket->menit. ' Minutes';
-    
-                $start_main = $getdatabilling->start;
-    
-                $end_main = date('Y-m-d H:i:s', strtotime($start_main . ' + '.$minutestoadd));
-    
-                $arrtime[$key] = array(
-                    'bill_id' => $getdatabilling->billing_id,
-                    'start_time' => $getdatabilling->start,
-                    'end_time' => date('Y-m-d H:i:s', strtotime($getdatabilling->end)),
-                    'menit_list' => $menit_list,
-                    'meja_id' => $value->meja_id,
-                    'paket_id' => $paket->paket_id,
-                );
             }
         }
 

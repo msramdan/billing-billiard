@@ -27,30 +27,7 @@ class Billing extends CI_Controller
 		// get data billing
 		$this->load->model('Transaksi_model');
 		$billing_data = $this->Transaksi_model->get_by_billing_id($id_billing);
-
-		$paketyangdimaenindaridatabilling = json_decode($billing_data->paket, TRUE);
-		$additionalitemdaridatabilling = json_decode($billing_data->additional_item, TRUE);
-		$menittotal = 0;
-
-		foreach ($paketyangdimaenindaridatabilling as $q => $v) {
-			$menittotal += intval($v['menit']);
-		}
-
-		// convert menittotal to hours and minutes and seconds
-		$hours = floor($menittotal / 60);
-		$minutes = ($menittotal % 60);
-		$seconds = 0;
-
-		$durasinya = $hours.':'.$minutes.':'.$seconds;
-
-		$arrdata = array(
-			'billing_id' => $id_billing,
-			'start_time' => $billing_data->start,
-			'total_durasi' => $durasinya.' ('.$menittotal.' Menit)',
-			'paketlist' => $paketyangdimaenindaridatabilling,
-			'itemlist' => $additionalitemdaridatabilling,
-			'title_pdf' => 'Billing #'.$id_billing,
-		);
+		$arrdata = '';
 
 		$this->load->library('pdfgenerator');
         
@@ -60,10 +37,90 @@ class Billing extends CI_Controller
         $paper = array(0,0,204,650);
         //orientasi paper potrait / landscape
         $orientation = "portrait";
+
+		if(is_numeric($billing_data->paket)){
+			$additionalitemdaridatabilling = json_decode($billing_data->additional_item, TRUE);
+
+			$mulainya = new DateTime($billing_data->start);
+			$e = new DateTime();
+			$diffseconds = $e->getTimestamp() - $mulainya->getTimestamp();
+			
+			// end of date mulainya + diffseconds
+			$akhirnya = date('Y-m-d H:i:s', strtotime($mulainya->format('Y-m-d H:i:s') . ' + ' . $diffseconds . ' seconds'));
+			$this->load->model('Paket_model');
+			$getdatapaket = $this->Paket_model->get_by_id($billing_data->paket);
+
+			$hours = floor($diffseconds / 3600);
+			$minutes = floor(($diffseconds / 60) % 60);
+			$seconds = $diffseconds % 60;
+
+			$durasinya = $hours.':'.$minutes.':'.$seconds;
+
+			// multiple count based on minutes
+			$x = 0;
+			$begin = $mulainya;
+
+			// Set end date
+			$end = new DateTime($akhirnya);
+
+			$menitcappaketloss = $getdatapaket->menit;
+
+			// Set interval
+			$interval = new DateInterval('PT'.$menitcappaketloss.'M');
+
+			// Create daterange
+			$daterange = new DatePeriod($begin, $interval ,$end);
+
+			// Loop through range
+			foreach($daterange as $date){
+				// Output date and time
+				$x++;
+			}
+
+			$arrdata = array(
+				'billing_id' => $id_billing,
+				'start_time' => $billing_data->start,
+				'total_durasi' => $durasinya,
+				'paketnya' => $getdatapaket,
+				'total_harga_billiard' => ($getdatapaket->harga * $x),
+				'itemlist' => $additionalitemdaridatabilling,
+				'title_pdf' => 'Billing #'.$id_billing,
+			);
+
+			$html = $this->load->view('transaksi/billing_invoice_cetak_paket_loss', $arrdata, true);
+			$this->pdfgenerator->generate_pdf_for_thermal($html, $file_pdf, $paper, $orientation);
+
+
+
+		} else {
+			$paketyangdimaenindaridatabilling = json_decode($billing_data->paket, TRUE);
+			$additionalitemdaridatabilling = json_decode($billing_data->additional_item, TRUE);
+			$menittotal = 0;
+
+			foreach ($paketyangdimaenindaridatabilling as $q => $v) {
+				$menittotal += intval($v['menit']);
+			}
+
+			// convert menittotal to hours and minutes and seconds
+			$hours = floor($menittotal / 60);
+			$minutes = ($menittotal % 60);
+			$seconds = 0;
+
+			$durasinya = $hours.':'.$minutes.':'.$seconds;
+
+			$arrdata = array(
+				'billing_id' => $id_billing,
+				'start_time' => $billing_data->start,
+				'total_durasi' => $durasinya.' ('.$menittotal.' Menit)',
+				'paketlist' => $paketyangdimaenindaridatabilling,
+				'itemlist' => $additionalitemdaridatabilling,
+				'title_pdf' => 'Billing #'.$id_billing,
+			);
+
+			$html = $this->load->view('transaksi/billing_invoice_cetak_paket_custom',$arrdata, true);	    
         
-		$html = $this->load->view('transaksi/billing_invoice_cetak',$arrdata, true);	    
-        
-        // run dompdf
-        $this->pdfgenerator->generate_pdf_for_thermal($html, $file_pdf,$paper,$orientation);
+			// run dompdf
+			$this->pdfgenerator->generate_pdf_for_thermal($html, $file_pdf,$paper,$orientation);
+		}
     }
 }

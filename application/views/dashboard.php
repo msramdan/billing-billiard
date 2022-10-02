@@ -231,6 +231,7 @@
 														<td>
 															<select class="select-paket select2-b-aja" style="width: 100%;">
 																<?php
+																
 																foreach ($paket_list as $p) {
 																?>
 																	<option value="<?= $p->paket_id ?>"><?= $p->nama_paket ?></option>
@@ -374,10 +375,12 @@
 						<select class="select-paket select2-owo" style="width: 100%;" name="id_paket">
 							<?php
 							foreach ($paket_list as $p) {
-							?>
-								<option value="<?= $p->paket_id ?>"><?= $p->nama_paket ?> (+<?= $p->menit ?> Menit)</option>
-							<?php
-							}
+								if($p->paket_id != 0 || $p->paket_id != 1) {
+									?>
+										<option value="<?= $p->paket_id ?>"><?= $p->nama_paket ?> (+<?= $p->menit ?> Menit)</option>
+									<?php
+									}
+								}
 							?>
 						</select>
 					</div>
@@ -448,6 +451,7 @@
 	arrayTimerDurasi = new Array();
 	arrayTimerLeft = new Array();
 	arrayTimeOut = new Array();
+	arraySecondsDuration = new Array();
 
 	// loop through all meja
 	$('.meja_div').each(function(index, el) {
@@ -495,54 +499,88 @@
 		}
 
 		var mejaDiv = $('.meja_div').eq(meja_id);
-		var totalseconds = totalSeconds(new Date(), end)
 
-		if (totalseconds <= 0) {
-			mejaDiv.addClass('pending');
-
-			mejaDiv.find('.left-time').text(0 + ' jam ' + 0 + ' menit ' + 0 + ' detik');
-			mejaDiv.find('.btn-group-flex').html(`
-				<button class="btn btn-tambah-billing" type="button">Tambah</button>
-				<button class="btn btn-order-menu" type="button">Order Menu</button>
-				<button class="btn btn-checkout" type="button">Checkout</button>
-			`)
-
-			var totalDurationSeconds = convertSecondsToHoursMinutesSeconds(arraySecondsDuration[index])
-			// console.log(totalDurationSeconds)
-			mejaDiv.find('.duration-time').text(totalDurationSeconds)
-		} else {
+		if(end == null) {
 			mejaDiv.removeClass('pending');
 			mejaDiv.addClass('not-available')
 
 			arrayTimerLeft[index] = setInterval(function() {
-				mejaDiv.find('.left-time').text(timeLeft(new Date(), end));
+				mejaDiv.find('.left-time').text('N/A');
+				arraySecondsDuration[index]++;
 
-				var totalDurationSeconds = convertSecondsToHoursMinutesSeconds(arraySecondsDuration[index] + totalSeconds(end, new Date()))
+				var totalDurationSeconds = convertSecondsToHoursMinutesSeconds(arraySecondsDuration[index])
 				// console.log(totalDurationSeconds)
 				mejaDiv.find('.duration-time').text(totalDurationSeconds)
 			}, 1000);
 
 			arrayTimeOut[index] = setTimeout(function() {
 				var durationtimetext = mejaDiv.find('.duration-time').text();
+				mejaDiv.find('.left-time').text('N/A');
+				mejaDiv.find('.btn-group-flex').html(`
+					<button class="btn btn-order-menu" type="button">Order Menu</button>
+					<button class="btn btn-checkout" type="button">Checkout</button>
+				`)
+				clearInterval(arrayTimerDurasi[index]);
+				hideSpecifiedLoadingState(meja_id + 1);
+			}, 1000);
+
+			mejaDiv.find('.btn-group-flex').html(`
+				<button class="btn btn-order-menu" type="button">Order Menu</button>
+				<button class="btn btn-checkout" type="button">Checkout</button>
+			`)
+		}
+
+		if(end) {
+			var totalseconds = totalSeconds(new Date(), end)
+	
+			if (totalseconds <= 0) {
+				mejaDiv.addClass('pending');
+	
 				mejaDiv.find('.left-time').text(0 + ' jam ' + 0 + ' menit ' + 0 + ' detik');
 				mejaDiv.find('.btn-group-flex').html(`
 					<button class="btn btn-tambah-billing" type="button">Tambah</button>
 					<button class="btn btn-order-menu" type="button">Order Menu</button>
 					<button class="btn btn-checkout" type="button">Checkout</button>
 				`)
-				clearInterval(arrayTimerDurasi[index]);
-				clearInterval(arrayTimerLeft[index]);
-				hideSpecifiedLoadingState(meja_id + 1);
-				mejaDiv.removeClass('not-available');
-				mejaDiv.addClass('pending')
-			}, totalseconds * 1000);
-
-			mejaDiv.find('.btn-group-flex').html(`
-				<button class="btn btn-tambah-billing" type="button">Tambah</button>
-				<button class="btn btn-order-menu" type="button">Order Menu</button>
-				<button class="btn btn-checkout" type="button">Checkout</button>
-			`)
+	
+				var totalDurationSeconds = convertSecondsToHoursMinutesSeconds(arraySecondsDuration[index])
+				// console.log(totalDurationSeconds)
+				mejaDiv.find('.duration-time').text(totalDurationSeconds)
+			} else {
+				mejaDiv.removeClass('pending');
+				mejaDiv.addClass('not-available')
+	
+				arrayTimerLeft[index] = setInterval(function() {
+					mejaDiv.find('.left-time').text(timeLeft(new Date(), end));
+	
+					var totalDurationSeconds = convertSecondsToHoursMinutesSeconds(arraySecondsDuration[index] + totalSeconds(end, new Date()))
+					// console.log(totalDurationSeconds)
+					mejaDiv.find('.duration-time').text(totalDurationSeconds)
+				}, 1000);
+	
+				arrayTimeOut[index] = setTimeout(function() {
+					var durationtimetext = mejaDiv.find('.duration-time').text();
+					mejaDiv.find('.left-time').text(0 + ' jam ' + 0 + ' menit ' + 0 + ' detik');
+					mejaDiv.find('.btn-group-flex').html(`
+						<button class="btn btn-tambah-billing" type="button">Tambah</button>
+						<button class="btn btn-order-menu" type="button">Order Menu</button>
+						<button class="btn btn-checkout" type="button">Checkout</button>
+					`)
+					clearInterval(arrayTimerDurasi[index]);
+					clearInterval(arrayTimerLeft[index]);
+					hideSpecifiedLoadingState(meja_id + 1);
+					mejaDiv.removeClass('not-available');
+					mejaDiv.addClass('pending')
+				}, totalseconds * 1000);
+	
+				mejaDiv.find('.btn-group-flex').html(`
+					<button class="btn btn-tambah-billing" type="button">Tambah</button>
+					<button class="btn btn-order-menu" type="button">Order Menu</button>
+					<button class="btn btn-checkout" type="button">Checkout</button>
+				`)
+			}
 		}
+
 	}
 
 	function getMejaStatusTimer() {
@@ -557,23 +595,42 @@
 				$.each(dt, function(index, val) {
 					// console.log(val)
 					// set durasi and sisa
-					var mejaDiv = $('#meja-' + val.meja_id);
+					if(val.jenis_paket == 'loss') {
+						alert('LOSS PAKET!')
+						var mejaDiv = $('#meja-' + val.meja_id);
+						var totalSecondsOfThisMeja = val.totalseconds;
+						arraySecondsDuration[index] = totalSecondsOfThisMeja;
 
-					var minutesTotal = sumArrayofMinutes(val.menit_list);
-					var totalSecondsOfThisMeja = minutesTotal * 60;
-					arraySecondsDuration[index] = totalSecondsOfThisMeja;
+
+						setDurasiAndSisa(index, totalSecondsOfThisMeja, null, val.meja_id - 1);
+
+						// find meja div index
+
+						mejaDiv.find('.select-paket').val(val.paket_id).trigger('change');
+
+						mejaDiv.find('.select-paket').prop('disabled', true);
+
+						mejaDiv.find('.bill-id').html(val.bill_id)
+						mejaDiv.find('.start-time').html(val.start_time)
+					} else {
+						var mejaDiv = $('#meja-' + val.meja_id);
+
+						var minutesTotal = sumArrayofMinutes(val.menit_list);
+						var totalSecondsOfThisMeja = minutesTotal * 60;
+						arraySecondsDuration[index] = totalSecondsOfThisMeja;
 
 
-					setDurasiAndSisa(index, totalSecondsOfThisMeja, val.end_time, val.meja_id - 1);
+						setDurasiAndSisa(index, totalSecondsOfThisMeja, val.end_time, val.meja_id - 1);
 
-					// find meja div index
+						// find meja div index
 
-					mejaDiv.find('.select-paket').val(val.paket_id).trigger('change');
+						mejaDiv.find('.select-paket').val(val.paket_id).trigger('change');
 
-					mejaDiv.find('.select-paket').prop('disabled', true);
+						mejaDiv.find('.select-paket').prop('disabled', true);
 
-					mejaDiv.find('.bill-id').html(val.bill_id)
-					mejaDiv.find('.start-time').html(val.start_time)
+						mejaDiv.find('.bill-id').html(val.bill_id)
+						mejaDiv.find('.start-time').html(val.start_time)
+					}
 
 				});
 				hideLoadingState()
@@ -715,15 +772,29 @@
 					var data = JSON.parse(data);
 					console.log(data)
 
-					bill_id.html(data.bill_id)
-					start_time.html(data.start_time)
-					arraySecondsDuration[index_meja] = data.seconds;
-					setDurasiAndSisa(index_meja, 0, data.end_time)
-					disform.find('.btn-group-flex').html(`
-						<button class="btn btn-tambah-billing" type="button">Tambah</button>
-						<button class="btn btn-order-menu" type="button">Order Menu</button>
-						<button class="btn btn-checkout" type="button">Checkout</button>
-					`)
+					if(data.jenis_paket == 'loss') {
+						bill_id.html(data.bill_id)
+						start_time.html(data.start_time)
+						arraySecondsDuration[index_meja] = data.seconds;
+						setDurasiAndSisa(index_meja, 0, null)
+						disform.find('.btn-group-flex').html(`
+							<button class="btn btn-order-menu" type="button">Order Menu</button>
+							<button class="btn btn-checkout" type="button">Checkout</button>
+						`)
+					}
+					disform.find('.select-paket').prop('disabled', true);
+
+					if(data.jenis_paket == 'custom') {
+						bill_id.html(data.bill_id)
+						start_time.html(data.start_time)
+						arraySecondsDuration[index_meja] = data.seconds;
+						setDurasiAndSisa(index_meja, 0, data.end_time)
+						disform.find('.btn-group-flex').html(`
+							<button class="btn btn-tambah-billing" type="button">Tambah</button>
+							<button class="btn btn-order-menu" type="button">Order Menu</button>
+							<button class="btn btn-checkout" type="button">Checkout</button>
+						`)
+					}
 					hideLoadingState()
 				},
 				error: function() {
@@ -799,7 +870,17 @@
 					billing_id: id_billing
 				},
 				success: function(data) {
-					$('#modal-detail-meja').find('.modal-body').html(data)
+					var dt = JSON.parse(data);
+					if(dt.status == 'not found') {
+						$('#modal-detail-meja').modal('hide');
+						Swal.fire(
+							'Error!',
+							dt.message,
+							'error'
+						)
+					} else {
+						$('#modal-detail-meja').find('.modal-body').html(dt.data)
+					}
 				},
 				error: function() {
 					alert('error');
