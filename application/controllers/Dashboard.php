@@ -53,7 +53,6 @@ class Dashboard extends CI_Controller {
 				'meja_id' => $id_meja,
 				'billiard_play_price' => $getpaketdetail->harga,
 				'additional_item' => json_encode(array()),
-				'grand_total' => $getpaketdetail->harga,
 				'payment_status' => 0
 			);
 
@@ -129,7 +128,6 @@ class Dashboard extends CI_Controller {
 				'meja_id' => $id_meja,
 				'billiard_play_price' => $getpaketdetail->harga,
 				'additional_item' => json_encode(array()),
-				'grand_total' => $getpaketdetail->harga,
 				'payment_status' => 0
 			);
 
@@ -214,8 +212,7 @@ class Dashboard extends CI_Controller {
 		$arr_data_transaksi = array(
 			'paket' => json_encode($paketpaketnya),
 			'end' => $end_main_new,
-			'billiard_play_price' => $billiard_play_price,
-			'grand_total' => $billiard_play_price + $additionalitem,
+			'billiard_play_price' => $billiard_play_price
 		);
 
 		$this->Transaksi_model->update_by_billing_id($id_billing, $arr_data_transaksi);
@@ -262,26 +259,8 @@ class Dashboard extends CI_Controller {
 
 					$durasinya = $hours.':'.$minutes.':'.$seconds;
 
-					// multiple count based on minutes
-					$x = 0;
-					$begin = $mulainya;
 
-					// Set end date
-					$end = new DateTime($akhirnya);
-
-					$menitcappaketloss = $getdatapaket->menit;
-
-					// Set interval
-					$interval = new DateInterval('PT'.$menitcappaketloss.'M');
-
-					// Create daterange
-					$daterange = new DatePeriod($begin, $interval ,$end);
-
-					// Loop through range
-					foreach($daterange as $date){
-						// Output date and time
-						$x++;
-					}
+					$bayarnyabilling = $getdatapaket->harga / $getdatapaket->menit * $minutes;
 
 					$arrdata = array(
 						'billing_id' => $id_billing,
@@ -289,7 +268,7 @@ class Dashboard extends CI_Controller {
 						'start_time' => $mulainya,
 						'total_durasi' => $durasinya.' ('.$minutes.' Menit)',
 						'paketnya' => $getdatapaket,
-						'total_harga_billiard' => ($getdatapaket->harga * $x),
+						'total_harga_billiard' => intval($bayarnyabilling),
 						'itemlist' => $additionalitemdaridatabilling,
 					);
 

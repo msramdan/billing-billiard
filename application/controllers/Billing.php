@@ -56,33 +56,14 @@ class Billing extends CI_Controller
 
 			$durasinya = $hours.':'.$minutes.':'.$seconds;
 
-			// multiple count based on minutes
-			$x = 0;
-			$begin = $mulainya;
-
-			// Set end date
-			$end = new DateTime($akhirnya);
-
-			$menitcappaketloss = $getdatapaket->menit;
-
-			// Set interval
-			$interval = new DateInterval('PT'.$menitcappaketloss.'M');
-
-			// Create daterange
-			$daterange = new DatePeriod($begin, $interval ,$end);
-
-			// Loop through range
-			foreach($daterange as $date){
-				// Output date and time
-				$x++;
-			}
+			$bayarnyabilling = $getdatapaket->harga / $getdatapaket->menit * $minutes;
 
 			$arrdata = array(
 				'billing_id' => $id_billing,
 				'start_time' => $billing_data->start,
 				'total_durasi' => $durasinya,
 				'paketnya' => $getdatapaket,
-				'total_harga_billiard' => ($getdatapaket->harga * $x),
+				'total_harga_billiard' => intval($bayarnyabilling),
 				'itemlist' => $additionalitemdaridatabilling,
 				'title_pdf' => 'Billing #'.$id_billing,
 			);
